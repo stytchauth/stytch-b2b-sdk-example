@@ -1,7 +1,7 @@
 // This API route sends a magic link to the specified email address.
-import type { NextApiRequest, NextApiResponse } from 'next';
-import loadStytch from '../../../lib/loadStytch';
-import { getDiscoverySessionData } from '../../../lib/sessionService';
+import type { NextApiRequest, NextApiResponse } from "next";
+import loadStytch from "../../../lib/loadStytch";
+import { getDiscoverySessionData } from "../../../lib/sessionService";
 
 const stytchClient = loadStytch();
 
@@ -9,10 +9,13 @@ type ErrorData = {
   errorString: string;
 };
 
-export async function handler(req: NextApiRequest, res: NextApiResponse<ErrorData>) {
+export async function handler(
+  req: NextApiRequest,
+  res: NextApiResponse<ErrorData>
+) {
   const discoverySessionData = getDiscoverySessionData(req, res);
   if (discoverySessionData.error) {
-    return res.redirect(307, '/login');
+    return res.redirect(307, "/login");
   }
 
   try {

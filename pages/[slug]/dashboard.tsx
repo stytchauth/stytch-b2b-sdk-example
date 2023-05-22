@@ -1,12 +1,27 @@
-import React, { FormEventHandler, MouseEventHandler, useEffect, useState } from 'react';
-import { useRouter } from 'next/router';
-import Link from 'next/link';
-import { OrgService } from '../../lib/orgService';
-import { createOidcSSOConn, createSamlSSOConn, deleteMember, invite } from '../../lib/api';
-import { SSOService } from '../../lib/ssoService';
-import { useAuth, withSession } from '../../lib/sessionService';
-import { Member, OIDCConnection, Organization, SAMLConnection } from '../../lib/loadStytch';
-import { useStytchB2BClient } from '@stytch/nextjs/b2b';
+import React, {
+  FormEventHandler,
+  MouseEventHandler,
+  useEffect,
+  useState,
+} from "react";
+import { useRouter } from "next/router";
+import Link from "next/link";
+import { OrgService } from "../../lib/orgService";
+import {
+  createOidcSSOConn,
+  createSamlSSOConn,
+  deleteMember,
+  invite,
+} from "../../lib/api";
+import { SSOService } from "../../lib/ssoService";
+import { useAuth, withSession } from "../../lib/sessionService";
+import {
+  Member,
+  OIDCConnection,
+  Organization,
+  SAMLConnection,
+} from "../../lib/loadStytch";
+import { useStytchB2BClient } from "@stytch/nextjs/b2b";
 
 type Props = {
   org: Organization;
@@ -25,8 +40,8 @@ const isValidEmail = (emailValue: string) => {
 const isAdmin = (member: Member) => !!member.trusted_metadata.admin;
 
 const SSO_METHOD = {
-  SAML: 'SAML',
-  OIDC: 'OIDC',
+  SAML: "SAML",
+  OIDC: "OIDC",
 };
 
 const MemberRow = ({ member, user }: { member: Member; user: Member }) => {
@@ -55,16 +70,20 @@ const MemberRow = ({ member, user }: { member: Member; user: Member }) => {
 
   return (
     <li>
-      [{isAdmin(member) ? 'admin' : 'member'}] {member.email_address} ({member.status})
-      {/* Do not let members delete themselves! */}
+      [{isAdmin(member) ? "admin" : "member"}] {member.email_address} (
+      {member.status}){/* Do not let members delete themselves! */}
       {canDelete ? deleteButton : null}
     </li>
   );
 };
 
-const MemberList = ({ members, user, org }: Pick<Props, 'members' | 'user' | 'org'>) => {
+const MemberList = ({
+  members,
+  user,
+  org,
+}: Pick<Props, "members" | "user" | "org">) => {
   const router = useRouter();
-  const [email, setEmail] = useState('');
+  const [email, setEmail] = useState("");
   const [isDisabled, setIsDisabled] = useState(true);
 
   useEffect(() => {
@@ -99,7 +118,9 @@ const MemberList = ({ members, user, org }: Pick<Props, 'members' | 'user' | 'or
         <h3>Invite new member</h3>
         <form onSubmit={onInviteSubmit} className="row">
           <input
-            placeholder={`your-coworker@${org.email_allowed_domains[0] ?? 'example.com'}`}
+            placeholder={`your-coworker@${
+              org.email_allowed_domains[0] ?? "example.com"
+            }`}
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             type="email"
@@ -117,9 +138,9 @@ const IDPList = ({
   user,
   saml_connections,
   oidc_connections,
-}: Pick<Props, 'user' | 'saml_connections' | 'oidc_connections'>) => {
-  const [idpNameSAML, setIdpNameSAML] = useState('');
-  const [idpNameOIDC, setIdpNameOIDC] = useState('');
+}: Pick<Props, "user" | "saml_connections" | "oidc_connections">) => {
+  const [idpNameSAML, setIdpNameSAML] = useState("");
+  const [idpNameOIDC, setIdpNameOIDC] = useState("");
   const [ssoMethod, setSsoMethod] = useState(SSO_METHOD.SAML);
   const router = useRouter();
 
@@ -127,22 +148,26 @@ const IDPList = ({
     e.preventDefault();
     const res = await createSamlSSOConn(idpNameSAML);
     if (res.status !== 200) {
-      alert('Error creating connection');
+      alert("Error creating connection");
       return;
     }
     const conn = await res.json();
-    await router.push(`/${router.query.slug}/dashboard/saml/${conn.connection_id}`);
+    await router.push(
+      `/${router.query.slug}/dashboard/saml/${conn.connection_id}`
+    );
   };
 
   const onOidcCreate: FormEventHandler = async (e) => {
     e.preventDefault();
     const res = await createOidcSSOConn(idpNameOIDC);
     if (res.status !== 200) {
-      alert('Error creating connection');
+      alert("Error creating connection");
       return;
     }
     const conn = await res.json();
-    await router.push(`/${router.query.slug}/dashboard/oidc/${conn.connection_id}`);
+    await router.push(
+      `/${router.query.slug}/dashboard/oidc/${conn.connection_id}`
+    );
   };
 
   return (
@@ -155,7 +180,9 @@ const IDPList = ({
           <ul>
             {saml_connections.map((conn) => (
               <li key={conn.connection_id}>
-                <Link href={`/${router.query.slug}/dashboard/saml/${conn.connection_id}`}>
+                <Link
+                  href={`/${router.query.slug}/dashboard/saml/${conn.connection_id}`}
+                >
                   <span>
                     {conn.display_name} ({conn.status})
                   </span>
@@ -168,7 +195,9 @@ const IDPList = ({
           <ul>
             {oidc_connections.map((conn) => (
               <li key={conn.connection_id}>
-                <Link href={`/${router.query.slug}/dashboard/oidc/${conn.connection_id}`}>
+                <Link
+                  href={`/${router.query.slug}/dashboard/oidc/${conn.connection_id}`}
+                >
                   <span>
                     {conn.display_name} ({conn.status})
                   </span>
@@ -183,10 +212,19 @@ const IDPList = ({
       {isAdmin(user) && (
         <div className="section">
           <h3>Create a new SSO Connection</h3>
-          <form onSubmit={ssoMethod === SSO_METHOD.SAML ? onSamlCreate : onOidcCreate} className="row">
+          <form
+            onSubmit={
+              ssoMethod === SSO_METHOD.SAML ? onSamlCreate : onOidcCreate
+            }
+            className="row"
+          >
             <input
               type="text"
-              placeholder={ssoMethod === SSO_METHOD.SAML ? `SAML Display Name` : `OIDC Display Name`}
+              placeholder={
+                ssoMethod === SSO_METHOD.SAML
+                  ? `SAML Display Name`
+                  : `OIDC Display Name`
+              }
               value={ssoMethod === SSO_METHOD.SAML ? idpNameSAML : idpNameOIDC}
               onChange={
                 ssoMethod === SSO_METHOD.SAML
@@ -195,7 +233,11 @@ const IDPList = ({
               }
             />
             <button
-              disabled={ssoMethod === SSO_METHOD.SAML ? idpNameSAML.length < 3 : idpNameOIDC.length < 3}
+              disabled={
+                ssoMethod === SSO_METHOD.SAML
+                  ? idpNameSAML.length < 3
+                  : idpNameOIDC.length < 3
+              }
               type="submit"
               className="primary"
             >
@@ -225,13 +267,19 @@ const IDPList = ({
   );
 };
 
-const Dashboard = ({ org, user, members, saml_connections, oidc_connections }: Props) => {
+const Dashboard = ({
+  org,
+  user,
+  members,
+  saml_connections,
+  oidc_connections,
+}: Props) => {
   const router = useRouter();
   const stytch = useStytchB2BClient();
 
   const logout = async () => {
     await stytch.session.revoke();
-    router.push('/');
+    router.push("/");
   };
 
   return (
@@ -245,10 +293,14 @@ const Dashboard = ({ org, user, members, saml_connections, oidc_connections }: P
       </p>
       <MemberList org={org} members={members} user={user} />
       <br />
-      <IDPList user={user} saml_connections={saml_connections} oidc_connections={oidc_connections} />
+      <IDPList
+        user={user}
+        saml_connections={saml_connections}
+        oidc_connections={oidc_connections}
+      />
 
       <div>
-        <Link href={'/orgswitcher'}>Switch Organizations</Link>
+        <Link href={"/orgswitcher"}>Switch Organizations</Link>
         &nbsp;&nbsp;&nbsp;&nbsp;
         <button onClick={logout}>Log Out</button>
       </div>
@@ -256,28 +308,30 @@ const Dashboard = ({ org, user, members, saml_connections, oidc_connections }: P
   );
 };
 
-export const getServerSideProps = withSession<Props, { slug: string }>(async (context) => {
-  const { member } = useAuth(context);
-  const org = await OrgService.findByID(member.organization_id);
+export const getServerSideProps = withSession<Props, { slug: string }>(
+  async (context) => {
+    const { member } = useAuth(context);
+    const org = await OrgService.findByID(member.organization_id);
 
-  if (org === null) {
-    return { redirect: { statusCode: 307, destination: `/login` } };
+    if (org === null) {
+      return { redirect: { statusCode: 307, destination: `/login` } };
+    }
+
+    const [members, ssoConnections] = await Promise.all([
+      OrgService.findAllMembers(org.organization_id),
+      SSOService.list(org.organization_id),
+    ]);
+
+    return {
+      props: {
+        org,
+        user: member,
+        members,
+        saml_connections: ssoConnections.saml_connections ?? [],
+        oidc_connections: ssoConnections.oidc_connections ?? [],
+      },
+    };
   }
-
-  const [members, ssoConnections] = await Promise.all([
-    OrgService.findAllMembers(org.organization_id),
-    SSOService.list(org.organization_id),
-  ]);
-
-  return {
-    props: {
-      org,
-      user: member,
-      members,
-      saml_connections: ssoConnections.saml_connections ?? [],
-      oidc_connections: ssoConnections.oidc_connections ?? [],
-    },
-  };
-});
+);
 
 export default Dashboard;
