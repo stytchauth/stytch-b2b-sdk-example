@@ -1,6 +1,10 @@
-import type { NextApiRequest, NextApiResponse } from 'next';
-import loadStytch from '../../../lib/loadStytch';
-import { clearIntermediateSession, getDiscoverySessionData, setSession } from '../../../lib/sessionService';
+import type { NextApiRequest, NextApiResponse } from "next";
+import loadStytch from "../../../lib/loadStytch";
+import {
+  clearIntermediateSession,
+  getDiscoverySessionData,
+  setSession,
+} from "../../../lib/sessionService";
 
 const stytchClient = loadStytch();
 
@@ -12,7 +16,7 @@ export async function handler(req: NextApiRequest, res: NextApiResponse) {
 
   const orgId = req.query.orgId;
   if (!orgId || Array.isArray(orgId)) {
-    return res.redirect(307, '/discovery');
+    return res.redirect(307, "/discovery");
   }
 
   const exchangeSession = () => {
@@ -35,7 +39,7 @@ export async function handler(req: NextApiRequest, res: NextApiResponse) {
     clearIntermediateSession(req, res);
     return res.redirect(307, `/${organization.organization_slug}/dashboard`);
   } catch (error) {
-    return res.redirect(307, '/discovery');
+    return res.redirect(307, "/discovery");
   }
 }
 
