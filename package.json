@@ -13,25 +13,22 @@
     "lint"
   ],
   "engines": {
-    "node": ">=16.10.0",
+    "node": ">=18.10.0",
     "npm": ">=6.14.15"
   },
   "dependencies": {
     "@next/font": "13.1.6",
-    "@stytch/nextjs": "5.0.2",
-    "@stytch/vanilla-js": "0.13.4",
+    "@stytch/nextjs": "^17.0.0",
+    "@stytch/vanilla-js": "^4.3.0",
     "@types/node": "18.13.0",
     "@types/react": "18.0.28",
     "@types/react-dom": "18.0.10",
     "cookies": "^0.8.0",
     "eslint": "8.34.0",
     "eslint-config-next": "13.1.6",
-    "isomorphic-base64": "^1.0.2",
-    "isomorphic-unfetch": "^4.0.2",
     "next": "13.5.4",
     "react": "18.2.0",
     "react-dom": "18.2.0",
-    "stytch": "^6.2.0",
     "typescript": "4.9.5"
   },
   "devDependencies": {
