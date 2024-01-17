@@ -1,6 +1,7 @@
 import "../styles/stytch.css";
 import type { AppProps } from "next/app";
-import { StytchB2BProvider, createStytchB2BUIClient } from "@stytch/nextjs/b2b";
+import { StytchB2BProvider } from "@stytch/nextjs/b2b";
+import { createStytchB2BUIClient } from '@stytch/nextjs/b2b/ui';
 import React from "react";
 import Head from "next/head";
 
