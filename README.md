@@ -28,7 +28,7 @@ Follow the steps below to get this application fully functional and running usin
 
    <img width="400" alt="Redirect URLs" src="https://user-images.githubusercontent.com/100632220/220420098-84c78ca3-4e71-46b5-90f1-25afbb571ce2.png">
 
-3. Navigate to [Frontend SDKs](https://stytch.com/dashboard/sdk-configuration) to enable the Frontend SDK and add `http://localhost:3000` as an authorized domain & `http://localhost:3000/{{slug}}/login` as the Organization URL template. giYou will also need to toggle:
+3. Navigate to [Frontend SDKs](https://stytch.com/dashboard/sdk-configuration) to enable the Frontend SDK and add `http://localhost:3000` as an authorized domain & `http://localhost:3000/{{slug}}/login` as the Organization URL template. You will also need to toggle:
 
    1. The 'Create Organizations' setting under 'Enabled methods'. This will enable end users to create new organizations when signing up for the application.
    2. The 'Member actions & permissions' setting under 'Enabled methods'. This will allow the SDK to take various actions on behalf of the logged-in Member as long as they are permitted under the project's RBAC policy.
@@ -40,13 +40,12 @@ Follow the steps below to get this application fully functional and running usin
    3. Go back to the "Roles" page. Click on the "stytch_member" role. Click "Edit Role". In the "permissions" accordion, you'll need to add permissions for 2 different resources. Once you've added both, click "done", then save the role.
       1. For the "stytch.member" resource, add the following action: "search".
       2. For the "stytch.sso" resource, add the following action: "get".
-   4. Go back to the "Roles" page. Click the "Create new Role" button and create a role with the role ID = "editor". In the "permissions" accordion, you'll need to add permissions for 4 different resources. Once you've added all 4, click "done", then save the role.
-      1. For the "stytch.member" resource, add the following actions: "search" and "update.info.name".
-      2. For the "stytch.self" resource, toggle the "Assign the wildcard..." switch.
-      3. For the "stytch.sso" resource, add the following actions: "get" and "update".
-      4. For the "todos" resource, add the following action: "create".
+   4. Go back to the "Roles" page. Click the "Create new Role" button and create a role with the role ID = "editor". In the "permissions" accordion, you'll need to add permissions for 3 different resources. Once you've added all 3, click "done", then save the role.
+      1. For the "stytch.member" resource, add the following action: "update.info.name".
+      2. For the "stytch.sso" resource, add the following action: "update".
+      3. For the "todos" resource, add the following action: "create".
 
-5Finally, navigate to [API Keys](https://stytch.com/dashboard/api-keys). You will need the `public_token` value found on this page later on.
+5. Finally, navigate to [API Keys](https://stytch.com/dashboard/api-keys). You will need the `public_token` value found on this page later on.
 
 ### On your machine
 
@@ -64,7 +63,7 @@ Next, create an `.env.local` file by running the command below which copies the 
 cp .env.template .env.local
 ```
 
-Open `.env.local` in the text editor of your choice, and set the environment variables using the `project_id`, `secret`, and `public_token` found on [API Keys](https://stytch.com/dashboard/api-keys). Leave the `NEXT_PUBLIC_STYTCH_PROJECT_ENV` value as `test`.
+Open `.env.local` in the text editor of your choice, and set the environment variables using the `public_token` found on [API Keys](https://stytch.com/dashboard/api-keys). Leave the `NEXT_PUBLIC_STYTCH_PROJECT_ENV` value as `test`.
 
 ```
 # This is what a completed .env.local file will look like
