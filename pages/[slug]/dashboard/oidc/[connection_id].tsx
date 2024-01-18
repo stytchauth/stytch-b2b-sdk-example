@@ -1,6 +1,5 @@
 import React, { FormEventHandler, useEffect, useState } from 'react';
 import { useRouter } from 'next/router';
-import { formatSSOStartURL } from '../../../../lib/ssoUtils';
 import Link from 'next/link';
 import { useStytchB2BClient, useStytchIsAuthorized } from '@stytch/nextjs/b2b';
 import { OIDCConnection } from '@stytch/vanilla-js';
