@@ -124,7 +124,11 @@ const OIDCConnectionEdit = ({ connection }: Props) => {
           )}
         </form>
         <br />
-        <a style={{ minWidth: 400, margin: 10 }} href={formatSSOStartURL(connection.connection_id)}>
+        <a style={{ minWidth: 400, margin: 10 }} onClick={() => stytch.sso.start({
+          connection_id: connection.connection_id,
+          login_redirect_url: `${window.location.origin}/authenticate`,
+          signup_redirect_url: `${window.location.origin}/authenticate`,
+        })}>
           <button className="secondary">Test connection</button>
         </a>
         <Link style={{ marginRight: 'auto' }} href={`/${router.query.slug}/dashboard`}>

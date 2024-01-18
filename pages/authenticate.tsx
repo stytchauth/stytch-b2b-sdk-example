@@ -25,13 +25,13 @@ const Discovery = () => {
       config={config}
       callbacks={{
         onEvent: async ({ type, data }) => {
-          if (
-            type === StytchEventType.B2BDiscoveryIntermediateSessionExchange
-          ) {
+          if (type === StytchEventType.B2BDiscoveryIntermediateSessionExchange) {
             router.push(`/${data.organization.organization_slug}/dashboard`);
           } else if (type === StytchEventType.B2BDiscoveryOrganizationsCreate) {
             router.push(`/${data.organization.organization_slug}/dashboard`);
           } else if (type === StytchEventType.B2BMagicLinkAuthenticate) {
+            router.push(`/${data.organization.organization_slug}/dashboard`);
+          } else if (type === StytchEventType.B2BSSOAuthenticate) {
             router.push(`/${data.organization.organization_slug}/dashboard`);
           }
         },

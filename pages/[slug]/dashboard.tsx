@@ -87,7 +87,7 @@ const MemberList = ({
   const stytch = useStytchB2BClient();
   const [email, setEmail] = useState("");
   const [role, setRole] = useState('');
-  const [isDisabled, setIsDisabled] = useState(true);
+  const [isDisabled, setIsDisabled] = useState(false);
 
   const onInviteSubmit: FormEventHandler = async (e) => {
     e.preventDefault();
@@ -132,7 +132,15 @@ const MemberList = ({
               onChange={(e) => setEmail(e.target.value)}
               type="email"
             />
-            <button className="primary" disabled={isDisabled} type="submit">
+            <select name="role-select" id="role-select" onChange={(e) => setRole(e.target.value)}>
+              <option value={role}>Set Role</option>
+              {roles.map((roleId) => (
+                <option key={roleId} value={roleId}>
+                  {roleId}
+                </option>
+              ))}
+            </select>
+            <button className="primary" disabled={isDisabled || !isValidEmail(email)} type="submit">
               Invite
             </button>
           </form>
@@ -338,21 +346,28 @@ const DashboardContainer = () => {
   // Load Organization
   const [org, setOrg] = useState<{ loaded: boolean; org: Organization | null }>({loaded: false, org: null});
   useEffect(() => {
-    stytch.organization.get().then((resp) => setOrg({loaded: true, org: resp}));
-  }, [stytch.organization]);
+    if(!org.loaded) {
+      stytch.organization.get().then((resp) => setOrg({loaded: true, org: resp}));
+    }
+  }, [stytch.organization, org.loaded]);
 
   // Load Members
-  const {isAuthorized: canSearchMembers} = useStytchIsAuthorized('stytch.member', 'search');
+  const {isAuthorized: canSearchMembers, isInitialized} = useStytchIsAuthorized('stytch.member', 'search');
   const [members, setMembers] = useState<{ loaded: boolean; members: Member[] }>({loaded: false, members: []});
   useEffect(() => {
+    if (!isInitialized) {
+      return;
+    }
     if (canSearchMembers) {
-      stytch.organization.members.search({}).then((resp) => setMembers({members: resp.members, loaded: true}));
+      if (!members.loaded) {
+        stytch.organization.members.search({}).then((resp) => setMembers({members: resp.members, loaded: true}));
+      }
     } else {
       if (member !== null) {
         setMembers({loaded: true, members: [member]});
       }
     }
-  }, [canSearchMembers, member, stytch.organization.members]);
+  }, [canSearchMembers, isInitialized, member, members.loaded, stytch.organization.members]);
 
   // Load SSO Connections
   const {isAuthorized: canGetConnections} = useStytchIsAuthorized('stytch.sso', 'get');

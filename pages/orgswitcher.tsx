@@ -1,19 +1,19 @@
-import React, { useEffect, useState } from 'react';
-import { useStytchB2BClient, useStytchMember } from '@stytch/nextjs/b2b';
-import { useRouter } from 'next/router';
-import { Member, DiscoveredOrganization, Organization } from '@stytch/vanilla-js';
+import React, {useEffect, useState} from 'react';
+import {useStytchB2BClient, useStytchMember} from '@stytch/nextjs/b2b';
+import {useRouter} from 'next/router';
+import {Member, DiscoveredOrganization, Organization} from '@stytch/vanilla-js';
 
 type Props = {
   discovered_organizations: DiscoveredOrganization[];
   user: Member;
 };
 
-const OrgSwitcherList = ({ discovered_organizations, user }: Props) => {
+const OrgSwitcherList = ({discovered_organizations, user}: Props) => {
   const stytch = useStytchB2BClient();
   const router = useRouter();
 
   const switchOrg = async (orgId: string) => {
-    const data = await stytch.session.exchange({ session_duration_minutes: 60, organization_id: orgId });
+    const data = await stytch.session.exchange({session_duration_minutes: 60, organization_id: orgId});
     router.push(`/${data.organization.organization_slug}/dashboard`);
   };
 
@@ -26,9 +26,11 @@ const OrgSwitcherList = ({ discovered_organizations, user }: Props) => {
       <h3>Your Organizations</h3>
       <ul>
         {organizations.map((organization) => (
-          <li key={organization.organization_id} onClick={() => switchOrg(organization.organization_id)}>
-            <span>{organization.organization_name}</span>
-            {organization.organization_id === user.organization_id && <span>&nbsp;(Active)</span>}
+          <li key={organization.organization_id}>
+            <a onClick={() => switchOrg(organization.organization_id)}>
+              <span>{organization.organization_name}</span>
+              {organization.organization_id === user.organization_id && <span>&nbsp;(Active)</span>}
+            </a>
           </li>
         ))}
       </ul>
@@ -46,7 +48,7 @@ const OrgSwitcher = (props: Props) => {
 
 const OrgSwitcherContainer = () => {
   const stytch = useStytchB2BClient();
-  const { member, isInitialized: memberIsInitialized } = useStytchMember();
+  const {member, isInitialized: memberIsInitialized} = useStytchMember();
   const [discoveredOrganizations, setDiscoveredOrganizations] = useState<{
     loaded: boolean;
     discoveredOrganizations: DiscoveredOrganization[];
@@ -59,7 +61,7 @@ const OrgSwitcherContainer = () => {
     stytch.discovery.organizations
       .list()
       .then((resp) =>
-        setDiscoveredOrganizations({ loaded: true, discoveredOrganizations: resp.discovered_organizations }),
+        setDiscoveredOrganizations({loaded: true, discoveredOrganizations: resp.discovered_organizations}),
       );
   }, [stytch, setDiscoveredOrganizations]);
 
@@ -72,7 +74,7 @@ const OrgSwitcherContainer = () => {
     return;
   }
 
-  return <OrgSwitcher discovered_organizations={discoveredOrganizations.discoveredOrganizations} user={member} />;
+  return <OrgSwitcher discovered_organizations={discoveredOrganizations.discoveredOrganizations} user={member}/>;
 };
 
 export default OrgSwitcherContainer;
