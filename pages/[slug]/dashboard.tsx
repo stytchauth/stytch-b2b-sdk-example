@@ -4,28 +4,15 @@ import React, {
   useEffect,
   useState,
 } from "react";
-import { useRouter } from "next/router";
+import {useRouter} from "next/router";
 import Link from "next/link";
-import { OrgService } from "../../lib/orgService";
-import {
-  createOidcSSOConn,
-  createSamlSSOConn,
-  deleteMember,
-  invite,
-} from "../../lib/api";
-import { SSOService } from "../../lib/ssoService";
-import { useAuth, withSession } from "../../lib/sessionService";
-import {
-  Member,
-  OIDCConnection,
-  Organization,
-  SAMLConnection,
-} from "../../lib/loadStytch";
-import { useStytchB2BClient } from "@stytch/nextjs/b2b";
+import {useStytchB2BClient, useStytchIsAuthorized, useStytchMember, useStytchMemberSession} from '@stytch/nextjs/b2b';
+import {Member, Organization, OIDCConnection, SAMLConnection} from '@stytch/vanilla-js';
 
 type Props = {
   org: Organization;
   user: Member;
+  user_roles: string[];
   members: Member[];
   saml_connections: SAMLConnection[];
   oidc_connections: OIDCConnection[];
@@ -37,30 +24,43 @@ const isValidEmail = (emailValue: string) => {
   return regex.test(emailValue);
 };
 
-const isAdmin = (member: Member) => !!member.trusted_metadata.admin;
+const getRole = (member: Member) => {
+  const roleIDs = member.roles?.map((role) => role.role_id) || [];
+  return getRoleFromList(roleIDs);
+};
+
+const getRoleFromList = (roles: string[]) => {
+  if (roles.includes('stytch_admin')) {
+    return 'admin';
+  } else if (roles.includes('editor')) {
+    return 'editor';
+  } else {
+    return 'member';
+  }
+};
 
 const SSO_METHOD = {
   SAML: "SAML",
   OIDC: "OIDC",
 };
 
-const MemberRow = ({ member, user }: { member: Member; user: Member }) => {
+const MemberRow = ({member, user}: { member: Member; user: Member }) => {
   const router = useRouter();
+  const stytch = useStytchB2BClient();
   const [isDisabled, setIsDisabled] = useState(false);
   const doDelete: MouseEventHandler = async (e) => {
     e.preventDefault();
     setIsDisabled(true);
-    await deleteMember(member.member_id);
+    await stytch.organization.members.delete(member.member_id);
     // Force a reload to refresh the user list
     router.replace(router.asPath);
     // TODO: Success toast?
   };
 
-  const canDelete =
-    /* Do not let members delete themselves! */
-    member.member_id !== user.member_id &&
-    /* Only admins can delete! */
-    isAdmin(user);
+  const {isAuthorized: canDeleteMembers} = useStytchIsAuthorized('stytch.member', 'delete');
+
+  // Do not let members delete themselves!
+  const canDelete = member.member_id !== user.member_id && canDeleteMembers;
 
   const deleteButton = (
     <button disabled={isDisabled} onClick={doDelete}>
@@ -70,25 +70,24 @@ const MemberRow = ({ member, user }: { member: Member; user: Member }) => {
 
   return (
     <li>
-      [{isAdmin(member) ? "admin" : "member"}] {member.email_address} (
-      {member.status}){/* Do not let members delete themselves! */}
+      <Link href={`/${router.query.slug}/dashboard/members/${member.member_id}`}>
+        [{getRole(member)}] {member.email_address} ({member.status})
+      </Link>
       {canDelete ? deleteButton : null}
     </li>
   );
 };
 
 const MemberList = ({
-  members,
-  user,
-  org,
-}: Pick<Props, "members" | "user" | "org">) => {
+                      members,
+                      user,
+                      org,
+                    }: Pick<Props, "members" | "user" | "org">) => {
   const router = useRouter();
+  const stytch = useStytchB2BClient();
   const [email, setEmail] = useState("");
+  const [role, setRole] = useState('');
   const [isDisabled, setIsDisabled] = useState(true);
-
-  useEffect(() => {
-    setIsDisabled(!isValidEmail(email));
-  }, [email]);
 
   const onInviteSubmit: FormEventHandler = async (e) => {
     e.preventDefault();
@@ -98,10 +97,17 @@ const MemberList = ({
     } else {
       setIsDisabled(true);
     }
-    await invite(email);
+    const rolesList = role === '' ? [] : [role];
+    await stytch.magicLinks.email.invite({email_address: email, roles: rolesList});
+    setEmail('');
+    setRole('');
     // Force a reload to refresh the user list
-    router.replace(router.asPath);
+    router.reload();
   };
+
+  const roles = ['editor', 'stytch_admin'];
+
+  const {isAuthorized: canInviteMembers} = useStytchIsAuthorized('stytch.member', 'create');
 
   return (
     <>
@@ -109,66 +115,51 @@ const MemberList = ({
         <h2>Members</h2>
         <ul>
           {members.map((member) => (
-            <MemberRow key={member.member_id} member={member} user={user} />
+            <MemberRow key={member.member_id} member={member} user={user}/>
           ))}
         </ul>
       </div>
 
-      <div className="section">
-        <h3>Invite new member</h3>
-        <form onSubmit={onInviteSubmit} className="row">
-          <input
-            placeholder={`your-coworker@${
-              org.email_allowed_domains[0] ?? "example.com"
-            }`}
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            type="email"
-          />
-          <button className="primary" disabled={isDisabled} type="submit">
-            Invite
-          </button>
-        </form>
-      </div>
+      {canInviteMembers && (
+        <div className="section">
+          <h3>Invite new member</h3>
+          <form onSubmit={onInviteSubmit} className="row">
+            <input
+              placeholder={`your-coworker@${
+                org.email_allowed_domains[0] ?? "example.com"
+              }`}
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              type="email"
+            />
+            <button className="primary" disabled={isDisabled} type="submit">
+              Invite
+            </button>
+          </form>
+        </div>
+      )}
     </>
   );
 };
 
-const IDPList = ({
-  user,
-  saml_connections,
-  oidc_connections,
-}: Pick<Props, "user" | "saml_connections" | "oidc_connections">) => {
-  const [idpNameSAML, setIdpNameSAML] = useState("");
-  const [idpNameOIDC, setIdpNameOIDC] = useState("");
+const IDPList = ({saml_connections, oidc_connections}: Pick<Props, 'saml_connections' | 'oidc_connections'>) => {
+  const [idpName, setIdpName] = useState('');
   const [ssoMethod, setSsoMethod] = useState(SSO_METHOD.SAML);
   const router = useRouter();
+  const stytch = useStytchB2BClient();
 
-  const onSamlCreate: FormEventHandler = async (e) => {
+  const onCreate: FormEventHandler = async (e) => {
     e.preventDefault();
-    const res = await createSamlSSOConn(idpNameSAML);
-    if (res.status !== 200) {
-      alert("Error creating connection");
-      return;
+    if (ssoMethod === SSO_METHOD.SAML) {
+      const res = await stytch.sso.saml.createConnection({display_name: idpName});
+      await router.push(`/${router.query.slug}/dashboard/saml/${res.connection.connection_id}`);
+    } else {
+      const res = await stytch.sso.oidc.createConnection({display_name: idpName});
+      await router.push(`/${router.query.slug}/dashboard/oidc/${res.connection.connection_id}`);
     }
-    const conn = await res.json();
-    await router.push(
-      `/${router.query.slug}/dashboard/saml/${conn.connection_id}`
-    );
   };
 
-  const onOidcCreate: FormEventHandler = async (e) => {
-    e.preventDefault();
-    const res = await createOidcSSOConn(idpNameOIDC);
-    if (res.status !== 200) {
-      alert("Error creating connection");
-      return;
-    }
-    const conn = await res.json();
-    await router.push(
-      `/${router.query.slug}/dashboard/oidc/${conn.connection_id}`
-    );
-  };
+  const {isAuthorized: canCreateConnections} = useStytchIsAuthorized('stytch.sso', 'create');
 
   return (
     <>
@@ -180,9 +171,7 @@ const IDPList = ({
           <ul>
             {saml_connections.map((conn) => (
               <li key={conn.connection_id}>
-                <Link
-                  href={`/${router.query.slug}/dashboard/saml/${conn.connection_id}`}
-                >
+                <Link href={`/${router.query.slug}/dashboard/saml/${conn.connection_id}`}>
                   <span>
                     {conn.display_name} ({conn.status})
                   </span>
@@ -195,9 +184,7 @@ const IDPList = ({
           <ul>
             {oidc_connections.map((conn) => (
               <li key={conn.connection_id}>
-                <Link
-                  href={`/${router.query.slug}/dashboard/oidc/${conn.connection_id}`}
-                >
+                <Link href={`/${router.query.slug}/dashboard/oidc/${conn.connection_id}`}>
                   <span>
                     {conn.display_name} ({conn.status})
                   </span>
@@ -208,39 +195,17 @@ const IDPList = ({
         </>
       </div>
 
-      {/*Only admins can create new SSO Connection*/}
-      {isAdmin(user) && (
+      {canCreateConnections && (
         <div className="section">
           <h3>Create a new SSO Connection</h3>
-          <form
-            onSubmit={
-              ssoMethod === SSO_METHOD.SAML ? onSamlCreate : onOidcCreate
-            }
-            className="row"
-          >
+          <form onSubmit={onCreate} className="row">
             <input
               type="text"
-              placeholder={
-                ssoMethod === SSO_METHOD.SAML
-                  ? `SAML Display Name`
-                  : `OIDC Display Name`
-              }
-              value={ssoMethod === SSO_METHOD.SAML ? idpNameSAML : idpNameOIDC}
-              onChange={
-                ssoMethod === SSO_METHOD.SAML
-                  ? (e) => setIdpNameSAML(e.target.value)
-                  : (e) => setIdpNameOIDC(e.target.value)
-              }
+              placeholder={ssoMethod === SSO_METHOD.SAML ? `SAML Display Name` : `OIDC Display Name`}
+              value={idpName}
+              onChange={(e) => setIdpName(e.target.value)}
             />
-            <button
-              disabled={
-                ssoMethod === SSO_METHOD.SAML
-                  ? idpNameSAML.length < 3
-                  : idpNameOIDC.length < 3
-              }
-              type="submit"
-              className="primary"
-            >
+            <button disabled={idpName.length < 3} type="submit" className="primary">
               Create
             </button>
           </form>
@@ -267,15 +232,67 @@ const IDPList = ({
   );
 };
 
+
+const OrgTodos = () => {
+  const [currentTodos, setCurrentTodos] = useState<string[]>([]);
+  const [todoInput, setTodoInput] = useState<string>('');
+  const submitDisabled = todoInput === '';
+
+  const onDelete = async (itemToDelete: string) => {
+    setCurrentTodos(currentTodos.filter((orgTodo) => orgTodo !== itemToDelete));
+  };
+
+  const {isAuthorized: canDelete} = useStytchIsAuthorized('todos', 'delete');
+  const {isAuthorized: canCreate} = useStytchIsAuthorized('todos', 'create');
+
+  const onSubmit: FormEventHandler = async (e) => {
+    e.preventDefault();
+    setCurrentTodos([...currentTodos, todoInput]);
+    setTodoInput('');
+  };
+
+  return (
+    <>
+      <div className="section">
+        <h2>Organization TODOs</h2>
+        {currentTodos.length === 0 && <p>No current TODOs for your organization.</p>}
+        <ul>
+          {currentTodos.map((orgTodo) => (
+            <li key={orgTodo}>
+              {orgTodo}
+              {canDelete && <button onClick={() => onDelete(orgTodo)}>Delete Item</button>}
+            </li>
+          ))}
+        </ul>
+      </div>
+
+      {canCreate && (
+        <div className="section">
+          <h3>Add new TODO</h3>
+          <form onSubmit={onSubmit} className="row">
+            <input placeholder="" value={todoInput} onChange={(e) => setTodoInput(e.target.value)}/>
+            <button disabled={submitDisabled} className="primary" type="submit">
+              Save
+            </button>
+          </form>
+        </div>
+      )}
+    </>
+  );
+};
+
 const Dashboard = ({
-  org,
-  user,
-  members,
-  saml_connections,
-  oidc_connections,
-}: Props) => {
+                     org,
+                     user,
+                     user_roles,
+                     members,
+                     saml_connections,
+                     oidc_connections,
+                   }: Props) => {
   const router = useRouter();
   const stytch = useStytchB2BClient();
+
+  const {isAuthorized: canGetSSOConnections} = useStytchIsAuthorized('stytch.sso', 'get');
 
   const logout = async () => {
     await stytch.session.revoke();
@@ -291,14 +308,18 @@ const Dashboard = ({
       <p>
         Current user: <span className="code">{user.email_address}</span>
       </p>
-      <MemberList org={org} members={members} user={user} />
-      <br />
-      <IDPList
-        user={user}
-        saml_connections={saml_connections}
-        oidc_connections={oidc_connections}
-      />
-
+      <p>
+        Current role: <span className="code">{getRoleFromList(user_roles)}</span>
+      </p>
+      <MemberList org={org} members={members} user={user}/>
+      <br/>
+      {canGetSSOConnections && (
+        <>
+          <IDPList saml_connections={saml_connections} oidc_connections={oidc_connections}/>
+          <br/>
+        </>
+      )}
+      <OrgTodos/>
       <div>
         <Link href={"/orgswitcher"}>Switch Organizations</Link>
         &nbsp;&nbsp;&nbsp;&nbsp;
@@ -308,30 +329,80 @@ const Dashboard = ({
   );
 };
 
-export const getServerSideProps = withSession<Props, { slug: string }>(
-  async (context) => {
-    const { member } = useAuth(context);
-    const org = await OrgService.findByID(member.organization_id);
+const DashboardContainer = () => {
+  const stytch = useStytchB2BClient();
+  const router = useRouter();
+  const {member, isInitialized: memberIsInitialized} = useStytchMember();
+  const {session, isInitialized: sessionIsInitialized} = useStytchMemberSession();
 
-    if (org === null) {
-      return { redirect: { statusCode: 307, destination: `/login` } };
+  // Load Organization
+  const [org, setOrg] = useState<{ loaded: boolean; org: Organization | null }>({loaded: false, org: null});
+  useEffect(() => {
+    stytch.organization.get().then((resp) => setOrg({loaded: true, org: resp}));
+  }, [stytch.organization]);
+
+  // Load Members
+  const {isAuthorized: canSearchMembers} = useStytchIsAuthorized('stytch.member', 'search');
+  const [members, setMembers] = useState<{ loaded: boolean; members: Member[] }>({loaded: false, members: []});
+  useEffect(() => {
+    if (canSearchMembers) {
+      stytch.organization.members.search({}).then((resp) => setMembers({members: resp.members, loaded: true}));
+    } else {
+      if (member !== null) {
+        setMembers({loaded: true, members: [member]});
+      }
     }
+  }, [canSearchMembers, member, stytch.organization.members]);
 
-    const [members, ssoConnections] = await Promise.all([
-      OrgService.findAllMembers(org.organization_id),
-      SSOService.list(org.organization_id),
-    ]);
+  // Load SSO Connections
+  const {isAuthorized: canGetConnections} = useStytchIsAuthorized('stytch.sso', 'get');
+  const [samlConnections, setSAMLConnections] = useState<{ loaded: boolean; connections: SAMLConnection[] }>({
+    loaded: false,
+    connections: [],
+  });
+  const [oidcConnections, setOIDCConnections] = useState<{ loaded: boolean; connections: OIDCConnection[] }>({
+    loaded: false,
+    connections: [],
+  });
+  useEffect(() => {
+    if (canGetConnections) {
+      stytch.sso.getConnections().then((resp) => {
+        setSAMLConnections({loaded: true, connections: resp.saml_connections ?? []});
+        setOIDCConnections({loaded: true, connections: resp.oidc_connections ?? []});
+      });
+    } else {
+      setSAMLConnections({loaded: true, connections: []});
+      setOIDCConnections({loaded: true, connections: []});
+    }
+  }, [canGetConnections, stytch.sso]);
 
-    return {
-      props: {
-        org,
-        user: member,
-        members,
-        saml_connections: ssoConnections.saml_connections ?? [],
-        oidc_connections: ssoConnections.oidc_connections ?? [],
-      },
-    };
+  const isLoading =
+    !memberIsInitialized ||
+    !sessionIsInitialized ||
+    !org.loaded ||
+    !members.loaded ||
+    !samlConnections.loaded ||
+    !oidcConnections.loaded;
+
+  if (isLoading) {
+    return;
   }
-);
 
-export default Dashboard;
+  if (org.org === null || member === null || session === null) {
+    router.push('/');
+    return;
+  }
+
+  return (
+    <Dashboard
+      org={org.org}
+      user={member}
+      user_roles={session.roles}
+      members={members.members}
+      saml_connections={samlConnections.connections}
+      oidc_connections={oidcConnections.connections}
+    />
+  );
+};
+
+export default DashboardContainer;
