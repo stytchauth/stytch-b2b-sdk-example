@@ -14,6 +14,7 @@ const LoginOrSignupDiscoveryForm = () => {
       products: [B2BProducts.emailMagicLinks],
       sessionOptions: { sessionDurationMinutes: 60 },
       emailMagicLinksOptions: {
+        // window.location.origin is not defined on SSR - we need to wait for CSR to render
         discoveryRedirectURL: `${window.location.origin}/authenticate`,
       },
       authFlowType: AuthFlowType.Discovery,

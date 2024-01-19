@@ -1,48 +1,42 @@
-import { OrgService } from "../../../../lib/orgService";
-import { SSOService } from "../../../../lib/ssoService";
-import React, { FormEventHandler } from "react";
-import { updateOidcSSOConn } from "../../../../lib/api";
-import { useRouter } from "next/router";
-import { formatSSOStartURL, OIDCConnection } from "../../../../lib/loadStytch";
-import { useAuth, withSession } from "../../../../lib/sessionService";
-import Link from "next/link";
+import React, { FormEventHandler, useEffect, useState } from 'react';
+import { useRouter } from 'next/router';
+import Link from 'next/link';
+import { useStytchB2BClient, useStytchIsAuthorized } from '@stytch/nextjs/b2b';
+import { OIDCConnection } from '@stytch/vanilla-js';
 
 type Props = { connection: OIDCConnection };
 
-function ConnectionEditPage({ connection }: Props) {
+const OIDCConnectionEdit = ({ connection }: Props) => {
   const router = useRouter();
-
-  // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-  // @ts-ignore
-  const urlSectionClick = (e) => {
-    e.preventDefault();
-    const panel = e.target.nextElementSibling;
-    if (panel.style.display === "block") {
-      panel.style.display = "none";
-    } else {
-      panel.style.display = "block";
-    }
-  };
+  const stytch = useStytchB2BClient();
+  const [showPanel, setShowPanel] = useState(false);
+  const togglePanel = () => setShowPanel((v) => !v);
 
   const onSubmit: FormEventHandler = async (e) => {
     e.preventDefault();
     const data = new FormData(e.target as HTMLFormElement);
 
-    await updateOidcSSOConn({
-      connection_id: connection.connection_id,
-      display_name: data.get("display_name") as string,
-      client_id: data.get("client_id") as string,
-      client_secret: data.get("client_secret") as string,
-      issuer: data.get("issuer") as string,
-      authorization_url: data.get("authorization_url") as string,
-      token_url: data.get("token_url") as string,
-      userinfo_url: data.get("userinfo_url") as string,
-      jwks_url: data.get("jwks_url") as string,
-    });
+    try {
+      await stytch.sso.oidc.updateConnection({
+        connection_id: connection.connection_id,
+        display_name: connection.display_name,
+        client_id: data.get('client_id') as string,
+        client_secret: data.get('client_secret') as string,
+        issuer: data.get('issuer') as string,
+        authorization_url: data.get('authorization_url') as string,
+        token_url: data.get('token_url') as string,
+        userinfo_url: data.get('userinfo_url') as string,
+        jwks_url: data.get('jwks_url') as string,
+      });
+    } catch (err) {
+      alert('Error updating OIDC connection');
+    }
 
     // Force a reload to refresh the conn list
     await router.replace(router.asPath);
   };
+
+  const { isAuthorized: canEdit } = useStytchIsAuthorized('stytch.sso', 'update');
 
   return (
     <>
@@ -50,34 +44,20 @@ function ConnectionEditPage({ connection }: Props) {
         <form onSubmit={onSubmit} style={{ minWidth: 400 }}>
           <h1>Edit OIDC Connection</h1>
           <label htmlFor="display_name">Display Name</label>
-          <input
-            type="text"
-            name="display_name"
-            value={connection.display_name}
-            disabled
-          />
+          <input type="text" name="display_name" value={connection.display_name} disabled />
           <label htmlFor="status">Status</label>
           <input type="text" name="status" disabled value={connection.status} />
           <label htmlFor="connection_id">Connection ID</label>
-          <input
-            type="text"
-            name="connection_id"
-            value={connection.connection_id}
-            disabled
-          />
+          <input type="text" name="connection_id" value={connection.connection_id} disabled />
           <label htmlFor="redirect_url">Redirect URL</label>
-          <input
-            type="text"
-            name="redirect_url"
-            value={connection.redirect_url}
-            disabled
-          />
+          <input type="text" name="redirect_url" value={connection.redirect_url} disabled />
           <label htmlFor="client_id">Client ID</label>
           <input
             type="text"
             name="client_id"
             placeholder="Client ID"
             defaultValue={connection.client_id}
+            disabled={!canEdit}
           />
           <label htmlFor="client_secret">Client Secret</label>
           <input
@@ -85,34 +65,30 @@ function ConnectionEditPage({ connection }: Props) {
             name="client_secret"
             placeholder="Client Secret"
             defaultValue={connection.client_secret}
+            disabled={!canEdit}
           />
           <label htmlFor="issuer">Issuer URL</label>
-          <input
-            type="text"
-            name="issuer"
-            placeholder="Issuer"
-            defaultValue={connection.issuer}
-          />
+          <input type="text" name="issuer" placeholder="Issuer" defaultValue={connection.issuer} disabled={!canEdit} />
           <hr />
           <h5>
-            If you provide a valid Issuer URL using an IDP that supports a
-            well-known configuration page, these endpoints will be
-            auto-populated.
+            If you provide a valid Issuer URL using an IDP that supports a well-known configuration page, these
+            endpoints will be auto-populated.
           </h5>
-          <button className="accordion" onClick={urlSectionClick}>
+          <button className="accordion" onClick={togglePanel}>
             <span>Endpoints</span>
             <span>
               <b>+</b>
             </span>
           </button>
-          <div className="panel">
-            <div className={"panel-contents"}>
+          <div className="panel" style={{ display: showPanel ? 'block' : 'none' }}>
+            <div className={'panel-contents'}>
               <label htmlFor="authorization_url">Authorization URL</label>
               <input
                 type="text"
                 name="authorization_url"
                 placeholder="Authorization URL"
                 defaultValue={connection.authorization_url}
+                disabled={!canEdit}
               />
               <label htmlFor="token_url">Token URL</label>
               <input
@@ -120,6 +96,7 @@ function ConnectionEditPage({ connection }: Props) {
                 name="token_url"
                 placeholder="Token URL"
                 defaultValue={connection.token_url}
+                disabled={!canEdit}
               />
               <label htmlFor="userinfo_url">User Info URL</label>
               <input
@@ -127,6 +104,7 @@ function ConnectionEditPage({ connection }: Props) {
                 name="userinfo_url"
                 placeholder="User Info URL"
                 defaultValue={connection.userinfo_url}
+                disabled={!canEdit}
               />
               <label htmlFor="jwks_url">Jwks URL</label>
               <input
@@ -134,60 +112,64 @@ function ConnectionEditPage({ connection }: Props) {
                 name="jwks_url"
                 placeholder="Jwks URL"
                 defaultValue={connection.jwks_url}
+                disabled={!canEdit}
               />
             </div>
           </div>
-          <button className="primary" type="submit">
-            Save
-          </button>
+          {canEdit && (
+            <button className="primary" type="submit">
+              Save
+            </button>
+          )}
         </form>
-        <a
-          style={{ minWidth: 400, margin: 10 }}
-          href={formatSSOStartURL(connection.connection_id)}
-        >
+        <br />
+        <a style={{ minWidth: 400, margin: 10 }} onClick={() => stytch.sso.start({
+          connection_id: connection.connection_id,
+          login_redirect_url: `${window.location.origin}/authenticate`,
+          signup_redirect_url: `${window.location.origin}/authenticate`,
+        })}>
           <button className="secondary">Test connection</button>
         </a>
-        <Link
-          style={{ marginRight: "auto" }}
-          href={`/${router.query.slug}/dashboard`}
-        >
+        <Link style={{ marginRight: 'auto' }} href={`/${router.query.slug}/dashboard`}>
           Back
         </Link>
       </div>
     </>
   );
-}
+};
 
-export const getServerSideProps = withSession<
-  Props,
-  { slug: string; connection_id: string }
->(async (context) => {
-  const connection_id = context.params?.["connection_id"];
-  const { member } = useAuth(context);
+const OIDCConnectionEditContainer = () => {
+  const router = useRouter();
+  const { connection_id } = router.query;
 
-  const org = await OrgService.findByID(member.organization_id);
-  if (org === null) {
-    return { redirect: { statusCode: 307, destination: `/login` } };
-  }
-
-  const connection = await SSOService.list(org.organization_id).then((res) => {
-    return res.oidc_connections.find(
-      (conn) => conn.connection_id === connection_id
-    );
+  const stytch = useStytchB2BClient();
+  const [oidcConnection, setOIDCConnection] = useState<{ loaded: boolean; connection: OIDCConnection | null }>({
+    loaded: false,
+    connection: null,
   });
 
-  if (!connection) {
-    return {
-      redirect: {
-        statusCode: 307,
-        destination: `/${org.organization_slug}/dashboard`,
-      },
-    };
+  const isLoading = !oidcConnection.loaded;
+
+  useEffect(() => {
+    if (!connection_id) {
+      return;
+    }
+    stytch.sso.getConnections().then((resp) => {
+      const connection = resp.oidc_connections.find((conn) => conn.connection_id === (connection_id as string)) || null;
+      setOIDCConnection({ loaded: true, connection });
+    });
+  }, [stytch, setOIDCConnection, connection_id]);
+
+  if (isLoading) {
+    return;
   }
 
-  return {
-    props: { connection },
-  };
-});
+  if (oidcConnection.connection === null) {
+    router.push('/');
+    return;
+  }
 
-export default ConnectionEditPage;
+  return <OIDCConnectionEdit connection={oidcConnection.connection} />;
+};
+
+export default OIDCConnectionEditContainer;

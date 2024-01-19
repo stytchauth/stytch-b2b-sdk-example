@@ -7,7 +7,6 @@ import {
 } from "@stytch/vanilla-js";
 import { StytchB2B } from "@stytch/nextjs/b2b";
 import { useRouter } from "next/router";
-import { updateMemberPostCreate } from "../lib/api";
 
 const Discovery = () => {
   const [config, setConfig] = useState<StytchB2BUIConfig | null>();
@@ -26,14 +25,13 @@ const Discovery = () => {
       config={config}
       callbacks={{
         onEvent: async ({ type, data }) => {
-          if (
-            type === StytchEventType.B2BDiscoveryIntermediateSessionExchange
-          ) {
+          if (type === StytchEventType.B2BDiscoveryIntermediateSessionExchange) {
             router.push(`/${data.organization.organization_slug}/dashboard`);
           } else if (type === StytchEventType.B2BDiscoveryOrganizationsCreate) {
-            await updateMemberPostCreate();
             router.push(`/${data.organization.organization_slug}/dashboard`);
           } else if (type === StytchEventType.B2BMagicLinkAuthenticate) {
+            router.push(`/${data.organization.organization_slug}/dashboard`);
+          } else if (type === StytchEventType.B2BSSOAuthenticate) {
             router.push(`/${data.organization.organization_slug}/dashboard`);
           }
         },

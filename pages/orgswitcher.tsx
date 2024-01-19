@@ -1,42 +1,36 @@
-import React from "react";
-import loadStytch, { Member, DiscoveredOrganizations } from "../lib/loadStytch";
-import {
-  getDiscoverySessionData,
-  useAuth,
-  withSession,
-} from "../lib/sessionService";
-import { useStytchB2BClient } from "@stytch/nextjs/b2b";
-import { useRouter } from "next/router";
+import React, {useEffect, useState} from 'react';
+import {useStytchB2BClient, useStytchMember} from '@stytch/nextjs/b2b';
+import {useRouter} from 'next/router';
+import {Member, DiscoveredOrganization, Organization} from '@stytch/vanilla-js';
 
 type Props = {
-  discovered_organizations: DiscoveredOrganizations;
+  discovered_organizations: DiscoveredOrganization[];
   user: Member;
 };
 
-const OrgSwitcherList = ({ discovered_organizations, user }: Props) => {
+const OrgSwitcherList = ({discovered_organizations, user}: Props) => {
   const stytch = useStytchB2BClient();
   const router = useRouter();
 
   const switchOrg = async (orgId: string) => {
-    const data = await stytch.session.exchange({
-      session_duration_minutes: 60,
-      organization_id: orgId,
-    });
+    const data = await stytch.session.exchange({session_duration_minutes: 60, organization_id: orgId});
     router.push(`/${data.organization.organization_slug}/dashboard`);
   };
+
+  const organizations = discovered_organizations
+    .map((discovered_organization) => discovered_organization.organization)
+    .filter((organization): organization is Organization => Boolean(organization));
+
   return (
     <div className="section">
       <h3>Your Organizations</h3>
       <ul>
-        {discovered_organizations.map(({ organization }) => (
-          <li
-            key={organization.organization_id}
-            onClick={() => switchOrg(organization.organization_id)}
-          >
-            <span>{organization.organization_name}</span>
-            {organization.organization_id === user.organization_id && (
-              <span>&nbsp;(Active)</span>
-            )}
+        {organizations.map((organization) => (
+          <li key={organization.organization_id}>
+            <a onClick={() => switchOrg(organization.organization_id)}>
+              <span>{organization.organization_name}</span>
+              {organization.organization_id === user.organization_id && <span>&nbsp;(Active)</span>}
+            </a>
           </li>
         ))}
       </ul>
@@ -52,28 +46,35 @@ const OrgSwitcher = (props: Props) => {
   );
 };
 
-export const getServerSideProps = withSession<Props>(async (context) => {
-  const { member } = useAuth(context);
-  const discoverySessionData = getDiscoverySessionData(
-    context.req,
-    context.res
-  );
-  if (discoverySessionData.error) {
-    return { redirect: { statusCode: 307, destination: `/login` } };
+const OrgSwitcherContainer = () => {
+  const stytch = useStytchB2BClient();
+  const {member, isInitialized: memberIsInitialized} = useStytchMember();
+  const [discoveredOrganizations, setDiscoveredOrganizations] = useState<{
+    loaded: boolean;
+    discoveredOrganizations: DiscoveredOrganization[];
+  }>({
+    loaded: false,
+    discoveredOrganizations: [],
+  });
+
+  useEffect(() => {
+    stytch.discovery.organizations
+      .list()
+      .then((resp) =>
+        setDiscoveredOrganizations({loaded: true, discoveredOrganizations: resp.discovered_organizations}),
+      );
+  }, [stytch, setDiscoveredOrganizations]);
+
+  const isLoading = !memberIsInitialized || !discoveredOrganizations.loaded;
+  if (isLoading) {
+    return;
   }
 
-  const { discovered_organizations } =
-    await loadStytch().discovery.organizations.list({
-      intermediate_session_token: discoverySessionData.intermediateSession,
-      session_jwt: discoverySessionData.sessionJWT,
-    });
+  if (member === null) {
+    return;
+  }
 
-  return {
-    props: {
-      user: member,
-      discovered_organizations,
-    },
-  };
-});
+  return <OrgSwitcher discovered_organizations={discoveredOrganizations.discoveredOrganizations} user={member}/>;
+};
 
-export default OrgSwitcher;
+export default OrgSwitcherContainer;
