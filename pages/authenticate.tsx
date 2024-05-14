@@ -31,6 +31,8 @@ const Discovery = () => {
             router.push(`/${data.organization.organization_slug}/dashboard`);
           } else if (type === StytchEventType.B2BMagicLinkAuthenticate) {
             router.push(`/${data.organization.organization_slug}/dashboard`);
+          } else if (type === StytchEventType.B2BOAuthAuthenticate) {
+            router.push(`/${data.organization.organization_slug}/dashboard`);
           } else if (type === StytchEventType.B2BSSOAuthenticate) {
             router.push(`/${data.organization.organization_slug}/dashboard`);
           }
