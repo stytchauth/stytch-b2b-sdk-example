@@ -6,7 +6,7 @@
 
 ## Overview
 
-This example application demonstrates how one may use Stytch's B2B authentication suite within a Next.js application. The application features a sign-up and login flow powered by Email magic links. On sign-up a new organization is created, and the initial member becomes the admin of that organization. As admin, the member is able to invite others to join the organization, and set up SSO connections via SAML or OIDC.
+This example application demonstrates how one may use Stytch's B2B authentication suite within a Next.js application. The application features a sign-up and login flow powered by Email magic links and Google OAuth. On sign-up a new organization is created, and the initial member becomes the admin of that organization. As admin, the member is able to invite others to join the organization, and set up SSO connections via SAML or OIDC.
 
 This project utilizes Stytch's RBAC offering to enforce authorization on Stytch resources as well as custom resources.
 
@@ -33,9 +33,12 @@ Follow the steps below to get this application fully functional and running usin
    1. The 'Create Organizations' setting under 'Enabled methods'. This will enable end users to create new organizations when signing up for the application.
    2. The 'Member actions & permissions' setting under 'Enabled methods'. This will allow the SDK to take various actions on behalf of the logged-in Member as long as they are permitted under the project's RBAC policy.
 
-4. Navigate to [Roles and Permissions](https://stytch.com/dashboard/rbac) to configure the project's RBAC policy. There should already be a "stytch_member" role, which is implicitly granted to all Members, and a "stytch_admin" role.
+4. **OPTIONAL** If you want to see Google OAuth in action in the login/signup forms, you'll need to configure Google OAuth in the [Stytch dashboard](https://stytch.com/dashboard/oauth/google). Note that if you are using the Stytch test environment, Google OAuth is automatically configured for you and you will not need to set anything up, but the Google One Tap prompt will not render.
+If you'd like the Google One Tap prompt to appear, make sure to set up your Google OAuth credentials and follow the additional setup steps for adding an authorized Javascript origin. You'll need to add both `http://localhost` and `http://localhost:3000` as authorized origins.
 
-   1. Click the "Roles" dropdown to navigate to "Resources". Click the "Create new Resource" button and create a resource with the resource ID = "todos". In the "actions" accordion, click the "Add action" button and input the following string: "create delete", which will create two actions. Make sure to save the resource before continuing.
+5. **OPTIONAL** If you want to see RBAC in action, navigate to [Roles and Permissions](https://stytch.com/dashboard/rbac) to configure the project's RBAC policy. There should already be a "stytch_member" role, which is implicitly granted to all Members, and a "stytch_admin" role.
+
+   1. Click on the "Resources" tab. Click the "Create new Resource" button and create a resource with the resource ID = "todos". In the "actions" accordion, click the "Add action" button and input the following string: "create delete", which will create two actions. Make sure to save the resource before continuing.
    2. Go back to the "Roles" page. Click on the "stytch_admin" role. Click "Edit Role". Under "Permissions", click "Assign permissions". In the modal, select "todos" in the resource dropdown, then toggle the "Assign the wildcard..." switch. Click "done", then save the role.
    3. Go back to the "Roles" page. Click on the "stytch_member" role. Click "Edit Role". In the "permissions" accordion, you'll need to add permissions for 2 different resources. Once you've added both, click "done", then save the role.
       1. For the "stytch.member" resource, add the following action: "search".
@@ -45,7 +48,7 @@ Follow the steps below to get this application fully functional and running usin
       2. For the "stytch.sso" resource, add the following action: "update".
       3. For the "todos" resource, add the following action: "create".
 
-5. Finally, navigate to [API Keys](https://stytch.com/dashboard/api-keys). You will need the `public_token` value found on this page later on.
+6. Finally, navigate to [API Keys](https://stytch.com/dashboard/api-keys). You will need the `public_token` value found on this page later on.
 
 ### On your machine
 
@@ -79,7 +82,11 @@ After completing all the setup steps above the application can be run with the c
 npm run dev
 ```
 
-The application will be available at [`http://localhost:3000`](http://localhost:3000).
+The application will be available at [`http://localhost:3000`](http://localhost:3000). The "Log in" and "Sign Up" buttons will both lead to a discovery flow.
+To log in to a specific organization, navigate to `http://localhost:3000/{{slug}}/login`, where `slug` is the `organization_slug` of the organization you wish to log into.
+For the organization-specific flow to work, make sure to add an organization URL template to your frontend SDK configuration as specified in step #3 of setup.
+
+See the [Stytch docs](https://stytch.com/docs/b2b/guides/login-flows) for more information about the different types of login flows.
 
 ## Expected RBAC functionality
 
@@ -104,6 +111,8 @@ serves to demonstrate the usage of `useStytchIsAuthorized` with non-Stytch resou
 in your RBAC policy.
 
 ### Roles and Permissions
+
+To see all of the RBAC functionality described in this section, make sure to follow step #5 of the setup instructions above to configure your RBAC policy.
 
 The first member in an organization will automatically be assigned the "stytch_admin" role.
 This role will allow them to invite new members to the organization, update member's names, create SSO connections,

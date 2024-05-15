@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import { StytchB2B } from "@stytch/nextjs/b2b";
 import {
   AuthFlowType,
+  B2BOAuthProviders,
   B2BProducts,
   StytchB2BUIConfig,
 } from "@stytch/vanilla-js";
@@ -11,9 +12,14 @@ const TenantedLoginForm = () => {
 
   useEffect(() => {
     setConfig({
-      products: [B2BProducts.emailMagicLinks],
+      products: [B2BProducts.emailMagicLinks, B2BProducts.oauth],
       sessionOptions: { sessionDurationMinutes: 60 },
       emailMagicLinksOptions: {
+        loginRedirectURL: `${window.location.origin}/authenticate`,
+        signupRedirectURL: `${window.location.origin}/authenticate`,
+      },
+      oauthOptions: {
+        providers: [{ type: B2BOAuthProviders.Google, one_tap: true }],
         loginRedirectURL: `${window.location.origin}/authenticate`,
         signupRedirectURL: `${window.location.origin}/authenticate`,
       },
