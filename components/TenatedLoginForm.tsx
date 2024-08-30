@@ -19,7 +19,7 @@ const TenantedLoginForm = () => {
         signupRedirectURL: `${window.location.origin}/authenticate`,
       },
       oauthOptions: {
-        providers: [{ type: B2BOAuthProviders.Google, one_tap: true }],
+        providers: [{ type: B2BOAuthProviders.Google, one_tap: true }, { type: B2BOAuthProviders.HubSpot }],
         loginRedirectURL: `${window.location.origin}/authenticate`,
         signupRedirectURL: `${window.location.origin}/authenticate`,
       },
