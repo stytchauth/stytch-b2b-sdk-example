@@ -19,7 +19,7 @@ const LoginOrSignupDiscoveryForm = () => {
         discoveryRedirectURL: `${window.location.origin}/authenticate`,
       },
       oauthOptions: {
-        providers: [{ type: B2BOAuthProviders.Google, one_tap: true }],
+        providers: [{ type: B2BOAuthProviders.Google, one_tap: true }, { type: B2BOAuthProviders.HubSpot }],
         // window.location.origin is not defined on SSR - we need to wait for CSR to render
         discoveryRedirectURL: `${window.location.origin}/authenticate`,
       },
