@@ -1,11 +1,11 @@
 import React, { useState, useEffect } from "react";
 import {
+  StytchB2B,
   AuthFlowType,
   B2BProducts,
   StytchB2BUIConfig,
   StytchEventType,
-} from "@stytch/vanilla-js";
-import { StytchB2B } from "@stytch/nextjs/b2b";
+} from "@stytch/nextjs/b2b";
 import { useRouter } from "next/router";
 
 const Discovery = () => {

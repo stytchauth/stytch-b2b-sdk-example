@@ -1,8 +1,7 @@
 import { useRouter } from 'next/router';
 import Link from 'next/link';
 import React, { FormEventHandler, useEffect, useState } from 'react';
-import { useStytchB2BClient, useStytchIsAuthorized, useStytchMember } from '@stytch/nextjs/b2b';
-import { Member } from '@stytch/vanilla-js';
+import { Member, useStytchB2BClient, useStytchIsAuthorized, useStytchMember } from '@stytch/nextjs/b2b';
 
 type Props = {
   member: Member;

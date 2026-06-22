@@ -1,7 +1,6 @@
 import React, {useEffect, useState} from 'react';
-import {useStytchB2BClient, useStytchMember} from '@stytch/nextjs/b2b';
 import {useRouter} from 'next/router';
-import {Member, DiscoveredOrganization, Organization} from '@stytch/vanilla-js';
+import {useStytchB2BClient, useStytchMember, Member, DiscoveredOrganization, Organization} from '@stytch/nextjs/b2b';
 
 type Props = {
   discovered_organizations: DiscoveredOrganization[];
