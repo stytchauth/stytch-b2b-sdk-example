@@ -1,8 +1,7 @@
 import React, { FormEventHandler, useEffect, useState } from 'react';
 import { useRouter } from 'next/router';
 import Link from 'next/link';
-import { useStytchB2BClient, useStytchIsAuthorized } from '@stytch/nextjs/b2b';
-import { SAMLConnection } from '@stytch/vanilla-js';
+import { SAMLConnection, useStytchB2BClient, useStytchIsAuthorized } from '@stytch/nextjs/b2b';
 
 type Props = { connection: SAMLConnection };
 

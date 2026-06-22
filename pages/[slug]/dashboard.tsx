@@ -6,8 +6,7 @@ import React, {
 } from "react";
 import {useRouter} from "next/router";
 import Link from "next/link";
-import {useStytchB2BClient, useStytchIsAuthorized, useStytchMember, useStytchMemberSession} from '@stytch/nextjs/b2b';
-import {Member, Organization, OIDCConnection, SAMLConnection} from '@stytch/vanilla-js';
+import {useStytchB2BClient, useStytchIsAuthorized, useStytchMember, useStytchMemberSession, Member, Organization, OIDCConnection, SAMLConnection} from '@stytch/nextjs/b2b';
 
 type Props = {
   org: Organization;

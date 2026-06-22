@@ -1,11 +1,11 @@
 import React, { useEffect, useState } from "react";
-import { StytchB2B } from "@stytch/nextjs/b2b";
 import {
+  StytchB2B,
   AuthFlowType,
   B2BOAuthProviders,
   B2BProducts,
   StytchB2BUIConfig,
-} from "@stytch/vanilla-js";
+} from "@stytch/nextjs/b2b";
 
 const TenantedLoginForm = () => {
   const [config, setConfig] = useState<StytchB2BUIConfig | null>();
