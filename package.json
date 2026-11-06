@@ -16,15 +16,15 @@
     "npm": ">=6.14.15"
   },
   "dependencies": {
-    "@stytch/nextjs": "^22.0.8",
+    "@stytch/nextjs": "^22.0.9",
     "@types/node": "18.13.0",
-    "@types/react": "18.0.28",
-    "@types/react-dom": "18.0.10",
-    "eslint": "8.34.0",
-    "eslint-config-next": "13.1.6",
-    "next": "^13.5.9",
-    "react": "18.2.0",
-    "react-dom": "18.2.0",
-    "typescript": "4.9.5"
+    "@types/react": "^18.3.31",
+    "@types/react-dom": "^18.3.7",
+    "eslint": "^8.57.1",
+    "eslint-config-next": "^15.5.29",
+    "next": "^15.5.29",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "typescript": "^5.9.3"
   }
 }
